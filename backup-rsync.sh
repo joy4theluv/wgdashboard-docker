@@ -1,0 +1,69 @@
+#!/bin/bash
+
+DATE=$(date +%F) # get current date in YYYY-MM-DD format
+BACKUP_DIR="/root/backups/wgdb-backup-$DATE" #path to store the backup archive
+ARCHIVE="$BACKUP_DIR/wgdb-volumes.tar.gz" #path to the backup archive
+
+mkdir -p "$BACKUP_DIR" # create backup directory if it doesn't exist
+
+echo "==> Creating WGDashboard backup archive..."
+tar -czf "$ARCHIVE" -C /var/lib/docker/volumes .
+
+if [ $? -ne 0 ]; then
+    echo "ERROR: Backup creation failed. Stopping script."
+    exit 1
+fi
+
+echo "==> Backup archive created successfully."
+
+
+echo "==> Checking for old local WGDashboard backups..."
+
+OLD_LOCAL=$(find /root/backups/ -maxdepth 1 -type d -name "wgdb-backup-*" -mtime +1) # up to 1 day old backups
+
+if [ -z "$OLD_LOCAL" ]; then
+    echo "==> No old local backups found. Skipping deletion."
+else
+    echo "==> Old local backups found:"
+    echo "$OLD_LOCAL"
+
+    if find /root/backups/ -maxdepth 1 -type d -name "wgdb-backup-*" -mtime +1 -exec rm -rf {} \; ; then
+        echo "==> Old local backups deleted successfully."
+    else
+        echo "WARNING: Failed to delete some old local backups. Continuing anyway."
+    fi
+fi
+
+
+sleep $(( RANDOM % 300 )) # wait for a random time between 0 and 5 minutes
+
+echo "==> Syncing backup to remote server..."
+
+if rsync -avz "$BACKUP_DIR" <REMOTE_USER>@<REMOTE_HOST>:<REMOTE_PATH> ; then
+    echo "==> Backup synced successfully."
+else
+    echo "WARNING: rsync failed. Continuing anyway."
+fi
+
+
+echo "==> Checking for old remote WGDashboard backups..."
+
+if ssh <REMOTE_USER>@<REMOTE_HOST> \
+ 'find <REMOTE_PATH> -maxdepth 1 -type d -name "wgdb-backup-*" -mtime +1 | grep -q .' ; then # check if there are any old remote backups
+
+    echo "==> Old remote backups found. Deleting..."
+
+    if ssh <REMOTE_USER>@<REMOTE_HOST> \
+     'find <REMOTE_PATH> -maxdepth 1 -type d -name "wgdb-backup-*" -mtime +1 -exec rm -rf {} \;' ; then # delete old remote backups
+        echo "==> Remote old backups deleted successfully."
+    else
+        echo "WARNING: Remote deletion failed. Continuing anyway."
+    fi
+
+else
+    echo "==> No old remote backups found. Skipping deletion."
+fi
+
+echo "==> Backup process completed successfully."
+
+#59 23 * * * /usr/local/bin/backup.sh
