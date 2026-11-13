@@ -66,4 +66,4 @@ fi
 
 echo "==> Backup process completed successfully."
 
-#59 23 * * * /usr/local/bin/backup.sh
+#59 23 * * * /usr/local/bin/backup.sh #cron job to run the backup script daily at 11:59 PM
