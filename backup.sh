@@ -33,5 +33,5 @@ else
     fi
 fi
 
-#59 23 * * * /usr/local/bin/backup.sh - cron job to run the backup script daily at 11:59 PM
-#tar -czf wgdb-volumes.tar.gz -C /var/lib/docker/volumes . - extract all volumes from /var/lib/docker/volumes
+#59 23 * * * /usr/local/bin/backup.sh #cron job to run the backup script daily at 11:59 PM
+#tar -xzf wgdb-volumes.tar.gz -C /var/lib/docker/volumes . - extract compressed archive to /var/lib/docker/volumes
