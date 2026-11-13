@@ -1,0 +1,28 @@
+services:
+  wgdashboard:
+    image: ghcr.io/wgdashboard/wgdashboard:latest
+    restart: unless-stopped
+    container_name: wgdashboard
+
+    ports:
+      - 10086:10086/tcp # WGDashboard web interface
+      - 51820:51820/udp # Vanilla WireGuard port
+      - 443:443/udp # Amnezia WireGuard port
+
+    volumes:
+      - aconf:/etc/amnezia/amneziawg
+      - conf:/etc/wireguard
+      - data:/data
+      
+    environment:
+      - tz=Asia/Yangon
+      - global_dns=1.1.1.1, 8.8.8.8
+    # - public_ip=xxxx.example.xxx - DNS record
+
+    cap_add:
+      - NET_ADMIN
+
+volumes:
+  aconf:
+  conf:
+  data:
